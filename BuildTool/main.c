@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include "testbuildtool.h"
+
 /**
  * This is for build tool testing purposes.
  */

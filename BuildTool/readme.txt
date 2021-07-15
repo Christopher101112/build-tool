@@ -8,7 +8,7 @@ This program is fully functioning and is comprised of:
 
 Directory system “TestBuildTool” and “main.c” are included for testing purposes.
 
-To test, simply compile build tool.c, run the executable, and another executable named “buildtool” will be created. Use command ./buildtool to execute. Successful execution will result in lyrics of “On the Wing” by Owl City being printed.
+To test, simply compile buildtool.c, run the executable, and another executable named “buildtool” will be created. Use command ./buildtool to execute. Successful execution will result in lyrics of “On the Wing” by Owl City being printed.
 
 This program works on any standard directory system.
 
