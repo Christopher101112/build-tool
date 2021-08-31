@@ -13,7 +13,7 @@ char cwdTop[1000*sizeof(char)]; //"Functioning" top directory path.
 char cwdTopTemp[1000*sizeof(char)]; //Returned from getcwd() top directory path.
 
 /* 
- * Build tool (ICSI 333 Project 4)
+ * Build tool
  * @author= chrispouch
  */
 int main(int argc, char *argv[]){
@@ -120,7 +120,6 @@ int recursiveDescent(const char *path){
 		ascendDir = chdir( "../" );
 	}
 
-	//Je ne comprends pas...
 	int closed = closedir(cwd);
 	if(closed!=0){
 		printf("Error closing directory.");
@@ -375,7 +374,6 @@ void cleanup(const char *path){
 	//Je ne comprends pas...
 	int closed = closedir(cwd);
 }
-
 
 
 /**
