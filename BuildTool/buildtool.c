@@ -1,72 +1,92 @@
-#include <stdio.h>
-#include "buildtool.h"
-#include <unistd.h>   //For calling kernel functions
-#include <sys/stat.h> //For using stat function
-#include <dirent.h>
-#include <string.h> //For strcpy()
-#include <errno.h>
-#include <stdlib.h> //For system()
-#include <libgen.h> //Get the simple name (not path) of cwd.
-
-
-char cwdTop[1000*sizeof(char)]; //"Functioning" top directory path.
-char cwdTopTemp[1000*sizeof(char)]; //Returned from getcwd() top directory path.
-
 /* 
  * Build tool
- * @author= chrispouch
+ *
+ * Recursively descend into all subdirectories (starting from where program is run) looking for .c files.
+ * In each directory, .c files compiled .o files, and linked together into static library (.a).
+ * All .a libraries moved to starting directory and linked into single executable.
+ * 
+ * Program is comprised of buildtool.c (this file) and buildtool.h.
+ * For testing and demonstration purposes, main.c, testbuildtool.h, and testBuildTool (dir) are included.
+ * 
+ * See readme.txt for more information.
+ * 
+ * @author= ChristopherPouch
+ * 2021
+ */
+
+#include <stdio.h>
+#include "buildtool.h"
+#include <unistd.h>   
+#include <sys/stat.h> 
+#include <dirent.h>
+#include <string.h> 
+#include <errno.h>
+#include <stdlib.h> 
+#include <libgen.h> 
+
+//Absolute top directory path (where the program started). 
+//All .a and .o will be moved here for linking.
+char cwdTop[1000*sizeof(char)]; 
+
+//Temporary initial form of cwdTop. Needs formatting to ensure it works for system() call.
+//For example, accounting for possible spaces in directory names.
+char cwdTopTemp[1000*sizeof(char)]; 
+
+
+/*
+ * Main method
+ * Start recursive search for .c files.
+ * Process those files, then link the results into single executable.
  */
 int main(int argc, char *argv[]){
 
-	//Get the cwd path- the top level where all .a will be moved to.
+	//Get the cwd path (where the executable is run from), the top level where all .a will be moved to.
 	getcwd(cwdTopTemp, sizeof(cwdTopTemp));
 
 	//The return from getcwd() may be broken if any directories have spaces in their names.
 	//Therefore we need to format by adding quotes.
-	formatTopDirPath(cwdTopTemp);
+	formatTopDirPath(cwdTopTemp); //Result will be copied to cwdTop.
 	
 	printf("\n\nEntering directory subsystem...\n");
 	printf("Creating .a, .o files...\n");
-	recursiveDescent(".");
-
-	//Temporary: check where we end..
-	char end[5000*sizeof(char)];
-	getcwd(end, sizeof(end));
 	
+	//Starting from CWD, find and process all .c files in the subsystem. 
+	recursiveDescent("."); 
 
-	//Finally, link it all together.
+	//All .c files have been converted to .o or .a and moved to top directory.
+	//In that top directory, link them all together
 	linkAll();
 	
+	//Many .o and .a files were created, but we don't need them anymore, 
+	//because they are now represented by a single executable.
+	//So delete all these .o and .a files.
 	printf("\nCleaning up .a and .o files from subdirectories...");
 	cleanup(".");
 	cleanupTop(".");
 
 	printf("\n\nAll processes completed.\nUse command ./buildtool to run executable.\n\n");
 	return 0;
-
 }
 
 
-
 /**
- * Recursively descends into file system.
- * Finds .c files in subdirectories
+ * Recursively descend into directory system.
+ * Find and process .c files in subdirectories.
  */
 int recursiveDescent(const char *path){
 	
-	int containsDotC;
+	int containsDotC; //Flag
 	int ascendDir, descendDir; //Check chdir worked.
 	DIR *cwd = opendir(path); //Pointer to current working directory
 	struct dirent *dir; //Struct filled out and returned by readdir()
-
 	
-	//While loop until all directories in cwd have been entered
+	//Loop until all directories in cwd have been entered
 	while( (dir=readdir(cwd)) != NULL){
 
 		//If the file is a directory (and not '.' or '..').
 		if( dir->d_type==DT_DIR && strcmp(dir->d_name, ".")!=0 && strcmp(dir->d_name, "..")!=0 ){
-
 			descendDir = chdir(dir->d_name); //New cwd
+			
 			if(descendDir==0){
 				//Entered directory.
 			}else{
@@ -75,23 +95,20 @@ int recursiveDescent(const char *path){
 			//Now in new cwd, call descent again.
 			recursiveDescent(".");
 		}
-	
 	}
 	//Process all .c files in cwd.
-	//ONLY IF we're not in the topmost (starting) directory.
-	char locationn[1000*sizeof(char)];
+	//Only if we're not in the topmost (starting) directory.
+	char locationn[1000*sizeof(char)]; //cwd
 	getcwd(locationn, sizeof(locationn));
 	if(strcmp(locationn, cwdTopTemp)!=0){
-		containsDotC = 0; //Zero until we find a c file.
+		containsDotC = 0; //Flag. Zero until we find a c file.
 		rewinddir(cwd);
 		while( (dir=readdir(cwd)) != NULL){
 
 			//If it is a .c file, process.
 			if(checkExtension(dir->d_name)==0){
-				
-				containsDotC = 1; //C file found, so below getDotA will be called.
-				int compiled = getDotO(dir->d_name);  //COMPILE .O
-				
+				containsDotC = 1; //c file found, so below getDotA will be called.
+				int compiled = getDotO(dir->d_name);  //Complie to .0	
 				if(compiled == 1){
 					printf("A problem occurred, terminating process. \n");
 					return 1;
@@ -99,14 +116,13 @@ int recursiveDescent(const char *path){
 			}
 		}
 	}
-
 	//If cwd has .c files, make a .a static library.
 	//But only if not in the top directory.
 	char location[1000*sizeof(char)];
 	getcwd(location, sizeof(location));
 	if(containsDotC==1){
 		if(strcmp(location, cwdTopTemp)==0){
-			//Arrived back at the top.
+			//Arrived back at the top, so do nothing, LinkAll() will do the rest.
 		}else{
 			getDotA(cwd);
 		}
@@ -127,7 +143,6 @@ int recursiveDescent(const char *path){
 
 	return 0;
 }
-
 
 
 /**
@@ -156,9 +171,8 @@ int checkExtension(char *fileName){
 }
 
 
-
 /**
- * Compile .c file to get .o
+ * Compile .c file to .o
  * @param char* name of the .c file.
  * @return 0 for success, 1 for failure.
  */
@@ -177,10 +191,8 @@ int getDotO(char *name){
 		printf("%s failed to compile: %s", name, strerror(errno));
 		return 1;
 	}
-
 	return 0; //Success.
 }
-
 
 
 /**
@@ -211,7 +223,6 @@ int getDotA(DIR *cwd){
 	strcat(moveCommand, nameDotA);
 	strcat(moveCommand, cwdTop);
 
-
 	rewinddir(cwd); //The cwd passed in has already been looked through.
 	while( (dir=readdir(cwd)) != NULL){
 
@@ -238,7 +249,6 @@ int getDotA(DIR *cwd){
 }
 
 
-
 /**
  * Ensure path is valid by adding quotes. 
  * Ex: user/alexis sanchez becomes user/"alexis sanchez"
@@ -251,9 +261,8 @@ void formatTopDirPath(char *path){
 
 	//Go through every char in path, insert quotes as needed.
 	while( *(path+pathIndex) != '\0'  &&  *(path+pathIndex) != EOF){
-		
-		if( *(path+pathIndex) != '/' ){
-			
+
+		if( *(path+pathIndex) != '/' ){	
 			*(cwdTop+cwdIndex) = *(path+pathIndex);
 			pathIndex++;
 			cwdIndex++;
@@ -276,7 +285,8 @@ void formatTopDirPath(char *path){
 
 
 /**
- * Link all the newly created .o and .a files together.
+ * Link all .o and .a files together into single executable.
+ * Process only files in  cwd (cwd at the time of function call).
  */
 int linkAll(){
 	
@@ -291,7 +301,6 @@ int linkAll(){
 	char linkCommand[1000*sizeof(char)] = "gcc";
 	char name[20*sizeof(char)] = " -o buildtool";
 	char tempFileName[20*sizeof(char)];
-	
 
 	//Look for .c files, get .o from them.
 	while( (topdir=readdir(top)) != NULL){
@@ -301,7 +310,6 @@ int linkAll(){
 			getDotO(topdir->d_name);
 		}
 	}
-
 
 	rewinddir(top);
 	while( (topdir=readdir(top)) != NULL){
@@ -315,7 +323,6 @@ int linkAll(){
 			strcat(linkCommand, tempFileName);
 		}
 	}
-
 	strcat(linkCommand, name);
 	
 	//Link into single executable, buildtool.
@@ -325,13 +332,12 @@ int linkAll(){
 	printf("WARNINGS EXPECTED (will resolve when linking is complete).\n");
 	printf("\nExecutable \"buildtool\" created.");
 	
-
 	return 0;
 }
 
+
 /**
  * After buildtool executable is made, clean up all the .o and .a files.
- * This can be avoided with -l input from user, but runs by default.
  */
 void cleanup(const char *path){
 
@@ -349,7 +355,6 @@ void cleanup(const char *path){
 			//Now in new cwd, call descent again.
 			cleanup("."); //dir->d_name
 		}
-	
 	}
 
 	//If cwd has .o or .a files, delete them.
@@ -371,14 +376,12 @@ void cleanup(const char *path){
 		chdir( "../" );
 	}
 
-	//Je ne comprends pas...
 	int closed = closedir(cwd);
 }
 
 
 /**
  * Remove all the extra .a and .o files from top (starting) directory.
- * This can be avoided with -l input from user, but runs by default.
  */
 void cleanupTop(const char *path){
 
