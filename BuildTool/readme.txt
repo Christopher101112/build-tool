@@ -12,7 +12,7 @@ To test, simply compile buildtool.c, run the executable, and another executable 
 
 This program works on any standard directory system.
 
-Chris~
+Chris~~
 
 
 
