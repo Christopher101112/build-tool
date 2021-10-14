@@ -2,11 +2,11 @@
  * Build tool
  *
  * Recursively descend into all subdirectories (starting from where program is run) looking for .c files.
- * In each directory, .c files compiled .o files, and linked together into static library (.a).
+ * In each directory, .c files compiled to .o files, and linked together into static library (.a).
  * All .a libraries moved to starting directory and linked into single executable.
  * 
  * Program is comprised of buildtool.c (this file) and buildtool.h.
- * For testing and demonstration purposes, main.c, testbuildtool.h, and testBuildTool (dir) are included.
+ * For testing and demonstration purposes, testmain.c, testbuildtool.h, and testBuildTool (dir) are included.
  * 
  * See readme.txt for more information.
  * 
