@@ -7,9 +7,13 @@ Build Tool
 
 
 
+
+
 DEMONSTRATION
 
 To see a 2-minute YouTube video explaining and demonstrating this program, follow this link: https://youtu.be/Cx9P7gWl-aU
+
+
 
 
 
@@ -26,6 +30,8 @@ For testing purposes, the following are included (but not necessary for program 
 
 
 
+
+
 OVERVIEW
 
 This program is designed to Recursively descend into a directory system (starting from where program is run) looking for .c files.
@@ -33,6 +39,8 @@ This program is designed to Recursively descend into a directory system (startin
 In each directory, .c files are compiled to .o files, and linked together into static libraries (.a). Then all .a libraries are moved to starting directory and linked into a single executable. The program ignores other types of files, as well as empty directories.
 
 The program uses system() calls (which allow execution of command line commands) to create, move, and delete files. 
+
+
 
 
 
